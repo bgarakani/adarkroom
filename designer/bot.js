@@ -74,7 +74,7 @@
     trace: [], unsent: [], timer: null, spaceTimer: null, flushTimer: null,
     lastWorkerPass: -Infinity, lastSnapshot: -Infinity, lastTripEnd: -Infinity,
     intent: '', trip: null, landmarkAttempts: {}, choiceCounts: {}, steer: 0, milestones: [], reached: {},
-    lastChoice: null, lootWait: null,
+    lastChoice: null, lootWait: null, exploreExhausted: null, lastStuckGoal: null, idleReason: null,
     stalled: 0, lastTickVirtual: 0
   };
 
@@ -567,6 +567,13 @@
   function embarkDecision() {
     if (!unlocked(Path) || S.trip) return null;
     if (have('cured meat') < 10) return null;
+    // Nothing new was in reach last time and the gear has not improved since.
+    if (S.exploreExhausted && S.exploreExhausted.radius === safeRadius()
+      && S.exploreExhausted.maxWater === World.getMaxWater()) {
+      S.idleReason = 'staying home — everything within reach is explored; needs better armour (radius '
+        + safeRadius() + ') or more water (' + World.getMaxWater() + ') to go further';
+      return null;
+    }
     if (elapsed() - S.lastTripEnd < TRIP_REST_MS) return null;
     var btn = $('#embarkButton');
     if (btn.data('onCooldown')) return null;
@@ -689,7 +696,13 @@
         }
       }
     }
-    if (!best) return { pos: World.VILLAGE_POS.slice(), why: 'nothing reachable left to explore' };
+    if (!best) {
+      // Everything within the armour-limited radius is already seen. Stay home
+      // until better gear widens the range.
+      S.exploreExhausted = { radius: safeRadius(), maxWater: World.getMaxWater() };
+      return { pos: World.VILLAGE_POS.slice(), why: 'nothing reachable left to explore' };
+    }
+    S.exploreExhausted = null;
     return { pos: best.pos, why: best.kind + ' ' + best.d + ' moves away' };
   }
 
@@ -703,16 +716,31 @@
       trace('world.goal', { goal: goal.pos, why: goal.why, status: worldStatus() });
       S.intent = 'walk to ' + key + ' — ' + goal.why;
     }
-    var dist = bfs(goal.pos), p = World.curPos;
+    var p = World.curPos;
+    if (p[0] === goal.pos[0] && p[1] === goal.pos[1]) {
+      // Already standing on it. Stepping onto the village is what normally ends
+      // a trip, so end it here rather than looking for a step that cannot exist.
+      if (p[0] === World.VILLAGE_POS[0] && p[1] === World.VILLAGE_POS[1]) {
+        act('go home', null, goal.why, function () { World.goHome(); });
+      } else {
+        S.landmarkAttempts[key] = (S.landmarkAttempts[key] || 0) + 1;
+      }
+      return;
+    }
+    var dist = bfs(goal.pos);
     var moves = [[World.NORTH, 'moveNorth'], [World.SOUTH, 'moveSouth'], [World.WEST, 'moveWest'], [World.EAST, 'moveEast']];
     var here = dist[p[0]][p[1]];
     for (var i = 0; i < moves.length; i++) {
       var nx = p[0] + moves[i][0][0], ny = p[1] + moves[i][0][1];
-      if (dist[nx] && dist[nx][ny] === here - 1) { World[moves[i][1]](); return; }
+      if (dist[nx] && dist[nx][ny] === here - 1) { S.lastStuckGoal = null; World[moves[i][1]](); return; }
     }
-    // Unreachable: count it as an attempt so the next choice differs.
+    // Unreachable: count it as an attempt so the next choice differs, and say so
+    // once rather than every tick.
     S.landmarkAttempts[key] = (S.landmarkAttempts[key] || 0) + 1;
-    trace('world.stuck', { goal: goal.pos });
+    if (S.lastStuckGoal !== key) {
+      S.lastStuckGoal = key;
+      trace('world.stuck', { goal: goal.pos, from: p.slice() });
+    }
   }
 
   // ---------------------------------------------------------------- events and combat
@@ -890,9 +918,10 @@
       if (Engine.activeModule === World) { worldStep(); return; }
       if (Engine.keyLock) return;
 
+      S.idleReason = null;
       var options = [fireDecision(), shipDecision(), tradeDecision(), buildDecision(), gatherDecision(), workerDecision(), embarkDecision()]
         .filter(Boolean);
-      if (!options.length) { S.intent = 'waiting'; return; }
+      if (!options.length) { S.intent = S.idleReason || 'waiting'; return; }
       options.sort(function (a, b) {
         if (b.priority !== a.priority) return b.priority - a.priority;
         return (b.module === Engine.activeModule) - (a.module === Engine.activeModule);

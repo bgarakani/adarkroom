@@ -236,6 +236,12 @@ game**; or the thing you changed is decided by code rather than data.
 **The bot is idle or very slow.** The tab is probably in the background — bring
 it to the front. The panel shows a warning in red when this is happening.
 
+**The bot says it is "staying home".** That is not a hang. It has explored
+everything it can reach: how far it will stray is limited by its armour, and how
+far it can walk before turning back is limited by its water. It carries on
+building and trading until it has better armour or a bigger water skin, then sets
+out again. Watch the `doing` line for the exact reason.
+
 **The bot is doing something silly.** That is worth writing down. Use the trace
 to find the decision and the reason it recorded, and either change the numbers or
 change the rule in `bot.js`.
