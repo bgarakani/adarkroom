@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Dark Room Tuning</title>
+	<link rel="icon" href="/game/favicon.ico">
+	<link rel="stylesheet" href="/designer/panel.css">
+</head>
+<body>
+	<main id="layout">
+		<section id="gamePane" aria-label="Game">
+			<iframe id="game" src="/game/" title="A Dark Room"></iframe>
+		</section>
+		<div id="resizer" role="separator" aria-orientation="vertical" aria-label="Resize panel" tabindex="0"></div>
+		<aside id="panel" aria-label="Tuning panel">
+			<header id="toolbar">
+				<div class="titleRow">
+					<div class="tabs" role="tablist">
+						<button type="button" role="tab" id="tabTuning" aria-selected="true" aria-controls="params">tuning</button>
+						<button type="button" role="tab" id="tabBot" aria-selected="false" aria-controls="botView">bot</button>
+					</div>
+					<span id="status" aria-live="polite">waiting for game…</span>
+				</div>
+				<div id="tuningTools">
+				<div class="searchRow">
+					<input id="search" type="search" placeholder="search parameters (e.g. stoke, trap, chance)" autocomplete="off" spellcheck="false">
+					<div class="viewToggle" role="group" aria-label="Show">
+						<button type="button" data-view="all" class="on">all</button>
+						<button type="button" data-view="modified">modified <span id="modCount">0</span></button>
+					</div>
+				</div>
+				<div class="actionRow">
+					<button type="button" id="apply" class="primary" disabled title="Save overrides and reload the game (⌘S / Ctrl+S)">apply &amp; reload</button>
+					<button type="button" id="discard" disabled>discard edits</button>
+					<span class="spacer"></span>
+					<button type="button" id="newGame" title="Delete the saved game (prestige is kept) and start over">new game</button>
+					<details class="menu">
+						<summary>more</summary>
+						<div class="menuBody">
+							<button type="button" id="export">export JSON</button>
+							<button type="button" id="import">import JSON</button>
+							<button type="button" id="resetAll">reset all to defaults</button>
+							<a href="/game/" target="_blank" rel="noopener">open tuned game in a tab</a>
+						</div>
+					</details>
+					<input id="importFile" type="file" accept="application/json,.json" hidden>
+				</div>
+				<div id="errors" hidden></div>
+				</div>
+				<div id="botTools" hidden>
+					<div class="actionRow">
+						<button type="button" id="botFresh" class="primary" title="Delete the save and let the bot play from the first fire">start fresh run</button>
+						<button type="button" id="botResume" title="Let the bot continue from the current save">play from here</button>
+						<button type="button" id="botStop" disabled>stop</button>
+						<button type="button" id="botStep" title="Run one decision">step</button>
+						<span class="spacer"></span>
+						<label class="speed">speed
+							<select id="botWarp">
+								<option value="1">1×</option><option value="2">2×</option><option value="5">5×</option>
+								<option value="10">10×</option><option value="20">20×</option><option value="40">40×</option>
+							</select>
+						</label>
+					</div>
+					<dl id="botStatus"></dl>
+				</div>
+			</header>
+			<div id="params" role="tabpanel" aria-labelledby="tabTuning"></div>
+			<div id="botView" role="tabpanel" aria-labelledby="tabBot" hidden>
+				<section class="botBlock">
+					<h2>milestones <span class="sub">game time since the run began</span></h2>
+					<ol id="botMilestones" class="milestones"><li class="empty">none yet.</li></ol>
+				</section>
+				<section class="botBlock traceBlock">
+					<h2>trace</h2>
+					<div class="traceTools">
+						<div id="traceFilters" class="chips"></div>
+						<label><input type="checkbox" id="traceFollow" checked> follow</label>
+					</div>
+					<ol id="traceList" class="trace"></ol>
+				</section>
+				<section class="botBlock">
+					<h2>saved runs <span class="sub">designer/traces/*.ndjson</span></h2>
+					<ul id="botRuns" class="runs"></ul>
+				</section>
+			</div>
+		</aside>
+	</main>
+	<script src="/designer/panel.js"></script>
+	<script src="/designer/bot-panel.js"></script>
+</body>
+</html>

@@ -7,3 +7,6 @@ lang/.DS_Store
 .DS_Store
 node_modules
 img/Thumbs.db
+
+# designer tool run artifacts
+designer/traces/

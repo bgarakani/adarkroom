@@ -1,5 +1,12 @@
 var Path = {
 	DEFAULT_BAG_SPACE: 10,
+	// extra bag space granted by the best carrying upgrade owned
+	BAG_UPGRADES: {
+		'rucksack': 10,
+		'wagon': 30,
+		'convoy': 60,
+		'cargo drone': 100
+	},
 	_STORES_OFFSET: 0,
 	// Everything not in this list weighs 1
 	Weight: {
@@ -71,13 +78,13 @@ var Path = {
 	
 	getCapacity: function() {
 		if($SM.get('stores["cargo drone"]', true) > 0) {
-			return Path.DEFAULT_BAG_SPACE + 100;
+			return Path.DEFAULT_BAG_SPACE + Path.BAG_UPGRADES['cargo drone'];
 		} else if($SM.get('stores.convoy', true) > 0) {
-			return Path.DEFAULT_BAG_SPACE + 60;
+			return Path.DEFAULT_BAG_SPACE + Path.BAG_UPGRADES['convoy'];
 		} else if($SM.get('stores.wagon', true) > 0) {
-			return Path.DEFAULT_BAG_SPACE + 30;
+			return Path.DEFAULT_BAG_SPACE + Path.BAG_UPGRADES['wagon'];
 		} else if($SM.get('stores.rucksack', true) > 0) {
-			return Path.DEFAULT_BAG_SPACE + 10;
+			return Path.DEFAULT_BAG_SPACE + Path.BAG_UPGRADES['rucksack'];
 		}
 		return Path.DEFAULT_BAG_SPACE;
 	},

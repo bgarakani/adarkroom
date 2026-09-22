@@ -8,6 +8,9 @@ var Room = {
 	_BUILDER_STATE_DELAY: 0.5 * 60 * 1000, // time between builder state updates
 	_STOKE_COOLDOWN: 10, // cooldown to stoke the fire
 	_NEED_WOOD_DELAY: 15 * 1000, // from when the stranger shows up, to when you need wood
+	_LIGHT_FIRE_COST: 5, // wood needed to light the fire
+	_STOKE_COST: 1, // wood used per stoke
+	_FOREST_START_WOOD: 4, // wood in stores when the forest unlocks
 	buttons: {},
 	Craftables: {
 		'trap': {
@@ -534,7 +537,7 @@ var Room = {
 			click: Room.lightFire,
 			cooldown: Room._STOKE_COOLDOWN,
 			width: '80px',
-			cost: { 'wood': 5 }
+			cost: { 'wood': Room._LIGHT_FIRE_COST }
 		}).appendTo('div#roomPanel');
 
 		// Create the stoke button
@@ -544,7 +547,7 @@ var Room = {
 			click: Room.stokeFire,
 			cooldown: Room._STOKE_COOLDOWN,
 			width: '80px',
-			cost: { 'wood': 1 }
+			cost: { 'wood': Room._STOKE_COST }
 		}).appendTo('div#roomPanel');
 
 		// Create the stores container
@@ -675,12 +678,12 @@ var Room = {
 	_tempTimer: null,
 	lightFire: function () {
 		var wood = $SM.get('stores.wood');
-		if (wood < 5) {
+		if (wood < Room._LIGHT_FIRE_COST) {
 			Notifications.notify(Room, _("not enough wood to get the fire going"));
 			Button.clearCooldown($('#lightButton.button'));
 			return;
-		} else if (wood > 4) {
-			$SM.set('stores.wood', wood - 5);
+		} else if (wood >= Room._LIGHT_FIRE_COST) {
+			$SM.set('stores.wood', wood - Room._LIGHT_FIRE_COST);
 		}
 		$SM.set('game.fire', Room.FireEnum.Burning);
 		AudioEngine.playSound(AudioLibrary.LIGHT_FIRE);
@@ -689,13 +692,13 @@ var Room = {
 
 	stokeFire: function () {
 		var wood = $SM.get('stores.wood');
-		if (wood === 0) {
+		if (wood < Room._STOKE_COST) {
 			Notifications.notify(Room, _("the wood has run out"));
 			Button.clearCooldown($('#stokeButton.button'));
 			return;
 		}
 		if (wood > 0) {
-			$SM.set('stores.wood', wood - 1);
+			$SM.set('stores.wood', wood - Room._STOKE_COST);
 		}
 		if ($SM.get('game.fire.value') < 4) {
 			$SM.set('game.fire', Room.FireEnum.fromInt($SM.get('game.fire.value') + 1));
@@ -757,7 +760,7 @@ var Room = {
 	},
 
 	unlockForest: function () {
-		$SM.set('stores.wood', 4);
+		$SM.set('stores.wood', Room._FOREST_START_WOOD);
 		Outside.init();
 		Notifications.notify(Room, _("the wind howls outside"));
 		Notifications.notify(Room, _("the wood is running out"));

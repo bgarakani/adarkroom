@@ -362,7 +362,7 @@ var Events = {
 		var cd = weapon.cooldown;
 		if(weapon.type == 'unarmed') {
 			if($SM.hasPerk('unarmed master')) {
-				cd /= 2;
+				cd /= World.PERK_EFFECTS.unarmedMasterSpeed;
 			}
 		}
 		var btn = new Button.Button({
@@ -472,11 +472,11 @@ var Events = {
 			if(weapon.type == 'unarmed') {
 				if(!$SM.get('character.punches')) $SM.set('character.punches', 0);
 				$SM.add('character.punches', 1);
-				if($SM.get('character.punches') == 50 && !$SM.hasPerk('boxer')) {
+				if($SM.get('character.punches') == World.PERK_EFFECTS.punchesForBoxer && !$SM.hasPerk('boxer')) {
 					$SM.addPerk('boxer');
-				} else if($SM.get('character.punches') == 150 && !$SM.hasPerk('martial artist')) {
+				} else if($SM.get('character.punches') == World.PERK_EFFECTS.punchesForMartialArtist && !$SM.hasPerk('martial artist')) {
 					$SM.addPerk('martial artist');
-				} else if($SM.get('character.punches') == 300 && !$SM.hasPerk('unarmed master')) {
+				} else if($SM.get('character.punches') == World.PERK_EFFECTS.punchesForUnarmedMaster && !$SM.hasPerk('unarmed master')) {
 					$SM.addPerk('unarmed master');
 				}
 
@@ -522,16 +522,16 @@ var Events = {
 				dmg = weapon.damage;
 				if(typeof dmg == 'number') {
 					if(weapon.type == 'unarmed' && $SM.hasPerk('boxer')) {
-						dmg *= 2;
+						dmg *= World.PERK_EFFECTS.boxerDamage;
 					}
 					if(weapon.type == 'unarmed' && $SM.hasPerk('martial artist')) {
-						dmg *= 3;
+						dmg *= World.PERK_EFFECTS.martialArtistDamage;
 					}
 					if(weapon.type == 'unarmed' && $SM.hasPerk('unarmed master')) {
-						dmg *= 2;
+						dmg *= World.PERK_EFFECTS.unarmedMasterDamage;
 					}
 					if(weapon.type == 'melee' && $SM.hasPerk('barbarian')) {
-						dmg = Math.floor(dmg * 1.5);
+						dmg = Math.floor(dmg * World.PERK_EFFECTS.barbarianDamage);
 					}
 				}
 			}
@@ -740,7 +740,7 @@ var Events = {
 
 		if(!stunned && !meditating) {
 			var toHit = scene.hit;
-			toHit *= $SM.hasPerk('evasive') ? 0.8 : 1;
+			toHit *= $SM.hasPerk('evasive') ? World.PERK_EFFECTS.evasiveEnemyHit : 1;
 			var dmg = -1;
 			if ((Events._meditateDmg ?? 0) > 0) {
 				dmg = Events._meditateDmg;

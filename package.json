@@ -8,6 +8,7 @@
   "license": "MPL-2.0",
   "scripts": {
     "start": "node dev-server.js",
+    "designer": "node designer/server.js",
     "update_pot": "pybabel extract -F lang/babel.cfg -c \"TRANSLATORS\" script -o lang/adarkroom.pot"
   },
   "dependencies": {

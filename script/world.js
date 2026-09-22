@@ -37,6 +37,38 @@ var World = {
   MEDS_HEAL: 20,
   HYPO_HEAL: 30,
   FIGHT_DELAY: 3, // At least three moves between fights
+  // extra max health granted by the best armour owned
+  ARMOUR_HEALTH: {
+    'l armour': 5,
+    'i armour': 15,
+    's armour': 35,
+    'kinetic armour': 75
+  },
+  // extra water capacity granted by the best water upgrade owned
+  WATER_UPGRADES: {
+    'waterskin': 10,
+    'cask': 20,
+    'water tank': 50,
+    'fluid recycler': 100
+  },
+  // numeric effects of perks
+  PERK_EFFECTS: {
+    boxerDamage: 2, // unarmed damage multiplier
+    martialArtistDamage: 3, // unarmed damage multiplier, stacks with boxer
+    unarmedMasterDamage: 2, // unarmed damage multiplier, stacks with the above
+    unarmedMasterSpeed: 2, // unarmed cooldown divisor
+    barbarianDamage: 1.5, // melee damage multiplier
+    evasiveEnemyHit: 0.8, // multiplier on enemy hit chance
+    preciseHitBonus: 0.1, // added to player hit chance
+    slowMetabolism: 2, // multiplier on moves per food
+    desertRat: 2, // multiplier on moves per water
+    gastronome: 2, // multiplier on meat healing
+    stealthyFightChance: 0.5, // multiplier on fight chance
+    scoutRadius: 2, // multiplier on light radius
+    punchesForBoxer: 50,
+    punchesForMartialArtist: 150,
+    punchesForUnarmedMaster: 300
+  },
   NORTH: [ 0, -1],
   SOUTH: [ 0,  1],
   WEST:  [-1,  0],
@@ -124,12 +156,8 @@ var World = {
 
   name: 'World',
   options: {}, // Nothing for now
-  init: function(options) {
-    this.options = $.extend(
-      this.options,
-      options
-    );
-
+  // Terrain probabilities and landmark placement used when generating a map
+  defineWorld: function() {
     // Setup probabilities. Sum must equal 1.
     World.TILE_PROBS[World.TILE.FOREST] = 0.15;
     World.TILE_PROBS[World.TILE.FIELD] = 0.35;
@@ -149,10 +177,20 @@ var World = {
     World.LANDMARKS[World.TILE.BATTLEFIELD] = { num: 5, minRadius: 18, maxRadius: World.RADIUS * 1.5, scene: 'battlefield', label:  _('A&nbsp;Battlefield')};
     World.LANDMARKS[World.TILE.SWAMP] = { num: 1, minRadius: 15, maxRadius: World.RADIUS * 1.5, scene: 'swamp', label:  _('A&nbsp;Murky&nbsp;Swamp')};
     World.LANDMARKS[World.TILE.EXECUTIONER] = { num: 1, minRadius: 28, maxRadius: 28, scene: 'executioner', 'label': _('A&nbsp;Ravaged&nbsp;Battleship')};
+    World.CACHE_LANDMARK = { num: 1, minRadius: 10, maxRadius: World.RADIUS * 1.5, scene: 'cache', label:  _('A&nbsp;Destroyed&nbsp;Village')};
+  },
+
+  init: function(options) {
+    this.options = $.extend(
+      this.options,
+      options
+    );
+
+    World.defineWorld();
 
     // Only add the cache if there is prestige data
     if($SM.get('previous.stores')) {
-      World.LANDMARKS[World.TILE.CACHE] = { num: 1, minRadius: 10, maxRadius: World.RADIUS * 1.5, scene: 'cache', label:  _('A&nbsp;Destroyed&nbsp;Village')};
+      World.LANDMARKS[World.TILE.CACHE] = World.CACHE_LANDMARK;
     }
 
     if(typeof $SM.get('features.location.world') == 'undefined') {
@@ -482,7 +520,7 @@ var World = {
     World.waterMove++;
     // Food
     var movesPerFood = World.MOVES_PER_FOOD;
-    movesPerFood *= $SM.hasPerk('slow metabolism') ? 2 : 1;
+    movesPerFood *= $SM.hasPerk('slow metabolism') ? World.PERK_EFFECTS.slowMetabolism : 1;
     if(World.foodMove >= movesPerFood) {
       World.foodMove = 0;
       var num = Path.outfit['cured meat'];
@@ -512,7 +550,7 @@ var World = {
     }
     // Water
     var movesPerWater = World.MOVES_PER_WATER;
-    movesPerWater *= $SM.hasPerk('desert rat') ? 2 : 1;
+    movesPerWater *= $SM.hasPerk('desert rat') ? World.PERK_EFFECTS.desertRat : 1;
     if(World.waterMove >= movesPerWater) {
       World.waterMove = 0;
       var water = World.water;
@@ -543,7 +581,7 @@ var World = {
   },
 
   meatHeal: function() {
-    return World.MEAT_HEAL * ($SM.hasPerk('gastronome') ? 2 : 1);
+    return World.MEAT_HEAL * ($SM.hasPerk('gastronome') ? World.PERK_EFFECTS.gastronome : 1);
   },
 
   medsHeal: function() {
@@ -557,7 +595,7 @@ var World = {
     World.fightMove++;
     if(World.fightMove > World.FIGHT_DELAY) {
       var chance = World.FIGHT_CHANCE;
-      chance *= $SM.hasPerk('stealthy') ? 0.5 : 1;
+      chance *= $SM.hasPerk('stealthy') ? World.PERK_EFFECTS.stealthyFightChance : 1;
       if(Math.random() < chance) {
         World.fightMove = 0;
         Events.triggerFight();
@@ -649,7 +687,7 @@ var World = {
 
   lightMap: function(x, y, mask) {
     var r = World.LIGHT_RADIUS;
-    r *= $SM.hasPerk('scout') ? 2 : 1;
+    r *= $SM.hasPerk('scout') ? World.PERK_EFFECTS.scoutRadius : 1;
     World.uncoverMap(x, y, r, mask);
     return mask;
   },
@@ -1025,20 +1063,20 @@ var World = {
 
   getMaxHealth: function() {
     if($SM.get('stores["kinetic armour"]', true) > 0) {
-      return World.BASE_HEALTH + 75;
+      return World.BASE_HEALTH + World.ARMOUR_HEALTH['kinetic armour'];
     } else if($SM.get('stores["s armour"]', true) > 0) {
-      return World.BASE_HEALTH + 35;
+      return World.BASE_HEALTH + World.ARMOUR_HEALTH['s armour'];
     } else if($SM.get('stores["i armour"]', true) > 0) {
-      return World.BASE_HEALTH + 15;
+      return World.BASE_HEALTH + World.ARMOUR_HEALTH['i armour'];
     } else if($SM.get('stores["l armour"]', true) > 0) {
-      return World.BASE_HEALTH + 5;
+      return World.BASE_HEALTH + World.ARMOUR_HEALTH['l armour'];
     }
     return World.BASE_HEALTH;
   },
 
   getHitChance: function() {
     if($SM.hasPerk('precise')) {
-      return World.BASE_HIT_CHANCE + 0.1;
+      return World.BASE_HIT_CHANCE + World.PERK_EFFECTS.preciseHitBonus;
     }
     return World.BASE_HIT_CHANCE;
   },
@@ -1046,13 +1084,13 @@ var World = {
   getMaxWater: function() {
 
     if($SM.get('stores["fluid recycler"]', true) > 0) {
-      return World.BASE_WATER + 100;
+      return World.BASE_WATER + World.WATER_UPGRADES['fluid recycler'];
     } else if($SM.get('stores["water tank"]', true) > 0) {
-      return World.BASE_WATER + 50;
+      return World.BASE_WATER + World.WATER_UPGRADES['water tank'];
     } else if($SM.get('stores.cask', true) > 0) {
-      return World.BASE_WATER + 20;
+      return World.BASE_WATER + World.WATER_UPGRADES['cask'];
     } else if($SM.get('stores.waterskin', true) > 0) {
-      return World.BASE_WATER + 10;
+      return World.BASE_WATER + World.WATER_UPGRADES['waterskin'];
     }
     return World.BASE_WATER;
   },

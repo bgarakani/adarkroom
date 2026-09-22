@@ -9,6 +9,8 @@ var Outside = {
 	_TRAPS_DELAY: 90,
 	_POP_DELAY: [0.5, 3],
 	_HUT_ROOM: 4,
+	_GATHER_AMOUNT: 10, // wood per gather
+	_GATHER_AMOUNT_CART: 50, // wood per gather once a cart is built
 	
 	_INCOME: {
 		'gatherer': {
@@ -607,7 +609,7 @@ var Outside = {
 	
 	gatherWood: function() {
 		Notifications.notify(Outside, _("dry brush and dead branches litter the forest floor"));
-		var gatherAmt = $SM.get('game.buildings["cart"]', true) > 0 ? 50 : 10;
+		var gatherAmt = $SM.get('game.buildings["cart"]', true) > 0 ? Outside._GATHER_AMOUNT_CART : Outside._GATHER_AMOUNT;
 		$SM.add('stores.wood', gatherAmt);
 		AudioEngine.playSound(AudioLibrary.GATHER_WOOD);
 	},
